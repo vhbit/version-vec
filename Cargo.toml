@@ -1,0 +1,7 @@
+[package]
+name = "version_vec"
+version = "0.1.0"
+authors = ["Valerii Hiora <valerii.hiora@gmail.com>"]
+description = "Simple implementation of generic version vectors"
+license = "MIT"
+exclude = [".travis.yml"]
