@@ -1,4 +1,4 @@
-#![feature(collections, core)]
+#![feature(collections, core, convert)]
 #![allow(dead_code)]
 
 use std::cmp;
