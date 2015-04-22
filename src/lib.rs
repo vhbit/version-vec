@@ -8,7 +8,7 @@ use std::num::Int;
 
 #[derive(Copy, Clone, Eq, Debug, PartialEq)]
 /// Describes relations between two version vectors
-enum Ordering {
+pub enum Ordering {
     Less,
     Equal,
     Greater,
@@ -32,7 +32,7 @@ impl Ordering {
 /// Represents version vector.
 ///
 /// Currently inner implementation is a sorted vector
-struct VersionVec<I, T> {
+pub struct VersionVec<I, T> {
     inner: Vec<(I, T)>
 }
 
