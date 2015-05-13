@@ -1,10 +1,10 @@
-#![feature(collections, core, convert)]
 #![allow(dead_code)]
+
+extern crate num;
 
 use std::cmp;
 use std::fmt;
-use std::ops::{Deref};
-use std::num::Int;
+use num::Num;
 
 #[derive(Copy, Clone, Eq, Debug, PartialEq)]
 /// Describes relations between two version vectors
@@ -50,7 +50,7 @@ impl<I: Clone, T: Clone> Clone for VersionVec<I, T> {
     }
 }
 
-impl<I, T> VersionVec<I, T> where I: Ord + Copy + Clone, T: Ord + Copy + Clone + Int {
+impl<I, T> VersionVec<I, T> where I: Ord + Copy + Clone + Sized, T: Ord + Copy + Clone + Num + Sized {
     /// Creates a new empty version vector
     pub fn new() -> VersionVec<I, T> {
         VersionVec {
@@ -95,7 +95,7 @@ impl<I, T> VersionVec<I, T> where I: Ord + Copy + Clone, T: Ord + Copy + Clone +
             None => self.inner.push((id, T::one())),
             Some(idx) => {
                 if self.inner[idx].0 == id {
-                    self.inner[idx].1 = self.inner[idx].1 + T::one()
+                    self.inner[idx].1 = self.inner[idx].1 +(T::one())
                 } else {
                     self.inner.insert(idx, (id, T::one()))
                 }
@@ -110,7 +110,9 @@ impl<I, T> VersionVec<I, T> where I: Ord + Copy + Clone, T: Ord + Copy + Clone +
 
         loop {
             if self_idx >= self.inner.len() {
-                self.inner.push_all(&other.inner[other_idx..]);
+                for i in other.inner.iter().skip(other_idx) {
+                    self.inner.push(i.clone());
+                }
                 break
             }
 
@@ -200,24 +202,13 @@ impl<I, T> Index<RangeFull> for VersionVec<I, T> {
 }
 */
 
-/*
-impl<I, T> AsSlice<(I, T)> for VersionVec<I, T> {
-    fn as_slice(&self) -> &[(I, T)] {
-        &self.inner
-    }
-}
-*/
-
 // FIXME: it actually should be convert::AsRef but since I'm stick to
 // an old version, Deref works much better for now
-impl<I, T> Deref for VersionVec<I, T> {
-    type Target = [(I, T)];
-
-    fn deref<'a>(&'a self) -> &'a [(I, T)] {
+impl<I, T> AsRef<[(I, T)]> for VersionVec<I, T> {
+    fn as_ref<'a>(&'a self) -> &'a [(I, T)] {
         &self.inner
     }
 }
-
 
 #[cfg(test)]
 mod test {
@@ -241,13 +232,13 @@ mod test {
         let mut v = VersionVec::from_vec(vec![(1, 10), (2, 20), (3, 30)]);
 
         v.bump_for(1);
-        assert_eq!(&*v, [(1, 11), (2, 20), (3, 30)]);
+        assert_eq!(v.as_ref(), [(1, 11), (2, 20), (3, 30)]);
 
         v.bump_for(0);
-        assert_eq!(&*v, [(0, 1), (1, 11), (2, 20), (3, 30)]);
+        assert_eq!(v.as_ref(), [(0, 1), (1, 11), (2, 20), (3, 30)]);
 
         v.bump_for(10);
-        assert_eq!(&*v, [(0, 1), (1, 11), (2, 20), (3, 30), (10, 1)]);
+        assert_eq!(v.as_ref(), [(0, 1), (1, 11), (2, 20), (3, 30), (10, 1)]);
     }
 
     #[test]
@@ -299,14 +290,20 @@ mod test {
             (vec![(1, 10), (2, 40)], vec![(1, 20), (2, 20)], vec![(1, 20), (2, 40)]),
             (vec![(10, 1), (20, 2), (30, 1)], vec![(5, 1), (10, 2), (15, 1), (20, 1), (25, 1), (35, 1)],
              vec![(5, 1), (10, 2), (15, 1), (20, 2), (25, 1), (30, 1), (35, 1)])
-            ];
+                ];
+
+        // FIXME: a dumb quick workaround
+        fn eval_eq<T: AsRef<[(usize, usize)]>>(v1: T, v2: &[(usize, usize)]) {
+            assert_eq!(v1.as_ref(), v2);
+        }
 
         for case in test_cases {
             let v1 = VersionVec::from_vec(case.0);
             let v2 = VersionVec::from_vec(case.1);
             let merged = v1.merged(&v2);
 
-            assert_eq!(&*merged, case.2.as_slice());
+            //assert_eq!(merged.as_ref(), &case.2.as_slice());
+            eval_eq(merged, &case.2);
         }
     }
 }
